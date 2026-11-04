@@ -1,0 +1,6 @@
+{
+  "name": "The Sean Sanctuary",
+  "description": "An exclusive clubhouse strictly for people named Sean (all spellings allowed), featuring Jurassic Park Nedry security against Simons, an interactive community whiteboard, and the Wikipedia Wheel of Seans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
