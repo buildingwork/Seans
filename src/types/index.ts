@@ -14,6 +14,7 @@ export interface FamousSean {
 }
 
 export interface StickyNote {
+  canDelete?: boolean;
   id: string;
   authorName: string;
   authorSpelling: string;

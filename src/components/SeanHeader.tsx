@@ -1,19 +1,17 @@
 import React from 'react';
 import { SeanSpelling } from '../types';
-import { ShieldCheck, LogOut, Skull, Sparkles } from 'lucide-react';
+import { ShieldCheck, LogOut, Sparkles } from 'lucide-react';
 
 interface SeanHeaderProps {
   currentSean: string;
   spelling: SeanSpelling;
   onLogout: () => void;
-  onTestNedry: () => void;
 }
 
 export const SeanHeader: React.FC<SeanHeaderProps> = ({
   currentSean,
   spelling,
   onLogout,
-  onTestNedry,
 }) => {
   return (
     <header className="bg-stone-900/90 border-b border-stone-800 sticky top-0 z-40 backdrop-blur-md">
@@ -42,16 +40,6 @@ export const SeanHeader: React.FC<SeanHeaderProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
-          {/* Nedry Simulator button */}
-          <button
-            onClick={onTestNedry}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900/80 border border-red-800/80 text-red-300 text-xs font-bold transition cursor-pointer"
-            title="Simulate Simon intrusion & Dennis Nedry warning"
-          >
-            <Skull className="w-3.5 h-3.5 text-red-400" />
-            <span className="hidden md:inline">Test Simon Trap</span>
-          </button>
-
           {/* Census Pill */}
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-400">
             <Sparkles className="w-3 h-3 text-emerald-400" />
@@ -59,17 +47,6 @@ export const SeanHeader: React.FC<SeanHeaderProps> = ({
             <span className="text-stone-600">|</span>
             <span>Simons Allowed: <strong className="text-red-400 font-bold">0</strong></span>
           </div>
-
-          {/* Download Source Code */}
-          <a
-            href="/sean-sanctuary.zip"
-            download="sean-sanctuary.zip"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/80 text-emerald-300 hover:text-emerald-200 text-xs font-bold transition shadow-sm cursor-pointer"
-            title="Download full project source code as a ZIP archive"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Download Site (.zip)</span>
-          </a>
 
           {/* Switch User / Log out */}
           <button

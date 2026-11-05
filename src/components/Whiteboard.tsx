@@ -58,82 +58,45 @@ const COLOR_MAP: Record<StickyNoteType['color'], { bg: string; border: string; t
   },
 };
 
-const SEED_NOTES: StickyNoteType[] = [
-  {
-    id: 'seed-1',
-    authorName: 'Sean Connery',
-    authorSpelling: 'Sean',
-    color: 'yellow',
-    content: 'Rule #1 of the Sean Sanctuary: Under no circumstances shall any Simon be granted access to the executive sauna.',
-    createdAt: Date.now() - 3600000 * 5,
-    x: 0,
-    y: 0,
-    likes: 42,
-    rotation: -2,
-  },
-  {
-    id: 'seed-2',
-    authorName: 'Shaun White',
-    authorSpelling: 'Shaun',
-    color: 'cyan',
-    content: 'Dropped in at the halfpipe today. Can confirm: Shaun with a U gets 20% higher airtime.',
-    createdAt: Date.now() - 3600000 * 3,
-    x: 0,
-    y: 0,
-    likes: 27,
-    rotation: 3,
-  },
-  {
-    id: 'seed-3',
-    authorName: 'Shawn Michaels',
-    authorSpelling: 'Shawn',
-    color: 'orange',
-    content: 'If Simon Cowell tries to critique my spelling again, he is receiving immediate Sweet Chin Music.',
-    createdAt: Date.now() - 3600000 * 2,
-    x: 0,
-    y: 0,
-    likes: 38,
-    rotation: -1,
-  },
-  {
-    id: 'seed-4',
-    authorName: 'Seán the Traditional',
-    authorSpelling: 'Seán',
-    color: 'green',
-    content: 'Do not forget the fada (á) when entering the Gaelic archives, a chairde!',
-    createdAt: Date.now() - 3600000 * 1,
-    x: 0,
-    y: 0,
-    likes: 19,
-    rotation: 2,
-  },
-  {
-    id: 'seed-5',
-    authorName: 'Sean Bean',
-    authorSpelling: 'Sean',
-    color: 'pink',
-    content: 'Just survived an entire meeting without being written out of the script. Progress.',
-    createdAt: Date.now() - 1800000,
-    x: 0,
-    y: 0,
-    likes: 56,
-    rotation: -3,
-  },
-];
-
 export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling }) => {
   const [activeTab, setActiveTab] = useState<'sticky' | 'draw'>('sticky');
-  const [notes, setNotes] = useState<StickyNoteType[]>(() => {
+  const [notes, setNotes] = useState<StickyNoteType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [busyNotes, setBusyNotes] = useState<Set<string>>(new Set());
+  const requestVersion = useRef(0);
+  const mutationCount = useRef(0);
+
+  const requestNotes = async (method = 'GET', body?: unknown) => {
+    const response = await fetch('/api/notes', {
+      method, cache: 'no-store',
+      ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data) throw new Error(data?.error || 'Could not reach the community board. Please try again.');
+    return data;
+  };
+
+  const refreshNotes = async () => {
+    if (mutationCount.current) return;
+    const version = ++requestVersion.current;
+    setLoading(true);
     try {
-      const saved = localStorage.getItem('SEAN_SANCTUARY_NOTES');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch {
-      // fallback
+      const data = await requestNotes();
+      if (version === requestVersion.current) { setNotes(data); setError(''); }
+    } catch (err) {
+      if (version === requestVersion.current) setError((err as Error).message);
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
     }
-    return SEED_NOTES;
-  });
+  };
+
+  useEffect(() => {
+    void refreshNotes();
+    const timer = window.setInterval(() => { if (!document.hidden) void refreshNotes(); }, 30000);
+    return () => { window.clearInterval(timer); requestVersion.current++; };
+  }, []);
 
   const [newNoteText, setNewNoteText] = useState('');
   const [selectedColor, setSelectedColor] = useState<StickyNoteType['color']>('yellow');
@@ -145,44 +108,41 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
   const [lineWidth, setLineWidth] = useState(4);
   const [isEraser, setIsEraser] = useState(false);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('SEAN_SANCTUARY_NOTES', JSON.stringify(notes));
-    } catch {
-      // ignore
-    }
-  }, [notes]);
-
-  // Handle adding a sticky note
-  const handleAddNote = (e: React.FormEvent) => {
+  const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoteText.trim()) return;
-
-    const randomRot = Math.floor(Math.random() * 8) - 4;
-    const newNote: StickyNoteType = {
-      id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      authorName: currentSean,
-      authorSpelling: spelling,
-      color: selectedColor,
-      content: newNoteText.trim(),
-      createdAt: Date.now(),
-      x: 0,
-      y: 0,
-      likes: 1,
-      rotation: randomRot,
-    };
-
-    setNotes([newNote, ...notes]);
-    setNewNoteText('');
-    playStickyPop();
+    if (!newNoteText.trim() || posting) return;
+    setPosting(true);
+    mutationCount.current++;
+    requestVersion.current++;
+    setLoading(false);
+    setError('');
+    try {
+      const note = await requestNotes('POST', { authorName: currentSean, content: newNoteText.trim(), color: selectedColor });
+      setNotes((previous) => [note, ...previous].slice(0, 100));
+      setNewNoteText('');
+      playStickyPop();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally { mutationCount.current--; setPosting(false); }
   };
 
-  const handleLike = (id: string) => {
-    setNotes(notes.map((n) => (n.id === id ? { ...n, likes: n.likes + 1 } : n)));
-  };
-
-  const handleDelete = (id: string) => {
-    setNotes(notes.filter((n) => n.id !== id));
+  const changeNote = async (id: string, method: 'PATCH' | 'DELETE') => {
+    if (busyNotes.has(id)) return;
+    setBusyNotes((previous) => new Set(previous).add(id));
+    mutationCount.current++;
+    requestVersion.current++;
+    setLoading(false);
+    setError('');
+    try {
+      const result = await requestNotes(method, { id });
+      setNotes((previous) => method === 'DELETE' ? previous.filter((note) => note.id !== id)
+        : previous.map((note) => note.id === id ? result : note));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      mutationCount.current--;
+      setBusyNotes((previous) => { const next = new Set(previous); next.delete(id); return next; });
+    }
   };
 
   // Drawing Canvas setup & handlers
@@ -295,7 +255,7 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-stone-400 mt-1">
-            Leave notes, announcements, jokes, or freehand sketches exclusively for verified Seans.
+            Share public notes with fellow Seans, or sketch on your own temporary doodle canvas.
           </p>
         </div>
 
@@ -329,6 +289,15 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
       {/* Tab 1: Sticky Notes Board */}
       {activeTab === 'sticky' && (
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-stone-400">
+            <p>Public board · Latest 100 notes · Refreshes every 30 seconds. Names are self-declared.</p>
+            <button type="button" onClick={() => void refreshNotes()} disabled={loading || posting || busyNotes.size > 0}
+              className="px-3 py-1.5 rounded-lg border border-stone-700 hover:text-white disabled:opacity-50">
+              {loading ? 'Refreshing…' : 'Refresh board'}
+            </button>
+          </div>
+          {error && <p role="alert" className="p-3 rounded-xl border border-red-800 bg-red-950/40 text-red-200 text-sm">{error} Your draft is kept; use Refresh board to retry loading.</p>}
+          {!loading && !error && notes.length === 0 && <p className="p-6 text-center text-stone-400 border border-dashed border-stone-700 rounded-xl">The board is ready. Leave the first note for your fellow Seans!</p>}
           {/* Post New Note Box */}
           <form
             onSubmit={handleAddNote}
@@ -347,6 +316,8 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
               onChange={(e) => setNewNoteText(e.target.value)}
               placeholder="Leave a message for fellow Seans... (e.g., 'Who is organizing the 2027 Sean Summit?')"
               rows={2}
+              maxLength={1000}
+              aria-label="Your community note"
               className="w-full bg-stone-900 border border-stone-700 focus:border-emerald-500 rounded-xl p-3 text-white text-sm placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition resize-none"
             />
 
@@ -384,11 +355,11 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
 
               <button
                 type="submit"
-                disabled={!newNoteText.trim()}
+                disabled={!newNoteText.trim() || posting}
                 className="bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                Pin to Sean Board
+                {posting ? 'Saving note…' : 'Pin to Sean Board'}
               </button>
             </div>
           </form>
@@ -426,7 +397,8 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
                   {/* Footer actions */}
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-black/10 dark:border-white/10 text-xs">
                     <button
-                      onClick={() => handleLike(note.id)}
+                      onClick={() => void changeNote(note.id, 'PATCH')}
+                      disabled={busyNotes.has(note.id)}
                       className="flex items-center gap-1 hover:opacity-80 active:scale-90 transition font-bold cursor-pointer"
                       title="Endorse this note"
                     >
@@ -438,13 +410,15 @@ export const Whiteboard: React.FC<WhiteboardProps> = ({ currentSean, spelling })
                       <span className="text-[10px] opacity-60">
                         {new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <button
-                        onClick={() => handleDelete(note.id)}
+                      {note.canDelete && <button
+                        disabled={busyNotes.has(note.id)}
+                        onClick={() => void changeNote(note.id, 'DELETE')}
                         className="opacity-40 hover:opacity-100 hover:text-red-500 transition cursor-pointer p-1"
-                        title="Delete note"
+                        title="Delete your note (from this browser)"
+                        aria-label="Delete your note"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </button>}
                     </div>
                   </div>
                 </div>

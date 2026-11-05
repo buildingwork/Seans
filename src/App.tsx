@@ -17,26 +17,9 @@ export default function App() {
   const [userSpelling, setUserSpelling] = useState<SeanSpelling>('Sean');
   const [nedryTriggeredName, setNedryTriggeredName] = useState<string | null>(null);
 
-  // Initialize from sessionStorage or URL query params (autostart / test support)
+  // Restore the current tab session.
   useEffect(() => {
     try {
-      const searchParams = new URLSearchParams(window.location.search);
-      const autostart = searchParams.get('autostart');
-      const paramName = searchParams.get('name');
-      const testSimon = searchParams.get('simon');
-
-      if (testSimon) {
-        setNedryTriggeredName('Simon');
-        return;
-      }
-
-      if (autostart === '1' || paramName) {
-        const nameToUse = paramName || 'Sean Ryan';
-        setCurrentUser(nameToUse);
-        setUserSpelling('Sean');
-        return;
-      }
-
       const storedUser = sessionStorage.getItem('SEAN_SANCTUARY_USER');
       const storedSpelling = sessionStorage.getItem('SEAN_SANCTUARY_SPELLING') as SeanSpelling;
       if (storedUser && storedSpelling) {
@@ -101,7 +84,6 @@ export default function App() {
             currentSean={currentUser}
             spelling={userSpelling}
             onLogout={handleLogout}
-            onTestNedry={() => handleTriggerSimon('Simon Cowell')}
           />
 
           <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-8">
