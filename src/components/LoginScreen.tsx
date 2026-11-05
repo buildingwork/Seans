@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { verifySeanAccess } from '../utils/nameVerification';
 import { playCelebrationFanfare, playNedryChirp } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
-import { ShieldCheck, ShieldAlert, Sparkles, KeyRound, Skull, UserCheck } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, KeyRound, UserCheck } from 'lucide-react';
 import { SeanSpelling } from '../types';
 
 interface LoginScreenProps {
@@ -73,15 +73,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onTriggerSi
         </div>
 
         <div className="flex items-center gap-2">
-          <a
-            href="/sean-sanctuary.zip"
-            download="sean-sanctuary.zip"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-300 hover:text-white text-xs font-semibold transition cursor-pointer"
-            title="Download full project source code as a ZIP archive"
-          >
-            <span>Download Site (.zip)</span>
-          </a>
-
           <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/80">
             <ShieldCheck className="w-3.5 h-3.5" />
             Zero-Simon Tolerance Active
@@ -179,65 +170,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onTriggerSi
             </div>
           </div>
 
-          {/* Quick Test Demo Presets */}
-          <div className="mt-5 p-3.5 bg-stone-950/60 border border-stone-800/90 rounded-xl">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Quick Test Presets (Try These!)
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Sean Ryan')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-800/60 text-emerald-300 text-xs font-medium transition cursor-pointer truncate"
-              >
-                Sean Ryan
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Shaun White')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-800/60 text-emerald-300 text-xs font-medium transition cursor-pointer truncate"
-              >
-                Shaun White
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Shawn Mendes')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-800/60 text-emerald-300 text-xs font-medium transition cursor-pointer truncate"
-              >
-                Shawn Mendes
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Simon')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-700 text-red-300 text-xs font-bold transition cursor-pointer flex items-center justify-between"
-              >
-                <span>Simon</span>
-                <Skull className="w-3.5 h-3.5 text-red-400" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Simon Pegg')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-700 text-red-300 text-xs font-bold transition cursor-pointer flex items-center justify-between"
-              >
-                <span>Simon Pegg</span>
-                <Skull className="w-3.5 h-3.5 text-red-400" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('Bob the Builder')}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-stone-800/60 hover:bg-stone-700 border border-stone-700 text-stone-300 text-xs font-medium transition cursor-pointer truncate"
-              >
-                Bob (Imposter)
-              </button>
-            </div>
-          </div>
+
         </div>
       </main>
 
       {/* Footer disclaimer */}
       <footer className="max-w-4xl mx-auto w-full py-4 text-center text-xs text-stone-600 border-t border-stone-900">
-        <p>The Sean Sanctuary &bull; Built strictly for Seans &bull; Simons will face the Dennis Nedry Jurassic Park protocol.</p>
+        <p>The Sean Sanctuary &bull; Built strictly for Seans</p>
       </footer>
     </div>
   );
